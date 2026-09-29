@@ -37,6 +37,7 @@ function Dashboard() {
   }
 
   const statistics = getTaskStatistics(tasks)
+  const pinnedTasks = tasks.filter((task) => task.is_pinned && task.status !== 'Completed')
   const recentTasks = getRecentTasks(tasks, 5)
   const completedPercent = statistics.total === 0 ? 0 : Math.round((statistics.completed / statistics.total) * 100)
   const statusBreakdown = [
@@ -68,6 +69,32 @@ function Dashboard() {
           <span>{error}</span>
           <button type="button" onClick={reloadTasks} className="font-semibold underline underline-offset-2">Try again</button>
         </div>
+      )}
+
+      {!loading && pinnedTasks.length > 0 && (
+        <section aria-labelledby="pinned-tasks-title" className="mb-5 overflow-hidden rounded-xl border border-accent-pale bg-white">
+          <div className="flex items-center gap-2 border-b border-border-soft px-5 py-4 sm:px-6">
+            <svg viewBox="0 0 20 20" aria-hidden="true" className="size-4 shrink-0 fill-none stroke-accent" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m7 2.5 6 0-.8 5 2.4 3.2v1.5H5.4v-1.5L7.8 7.5 7 2.5ZM10 12.2v5.3" />
+            </svg>
+            <div className="min-w-0">
+              <h2 id="pinned-tasks-title" className="font-[Manrope] text-base font-bold text-ink">Pinned tasks</h2>
+              <p className="mt-0.5 text-xs text-muted">Kept at the top of your overview.</p>
+            </div>
+            <span className="ml-auto rounded-full bg-accent-soft px-2.5 py-1 text-xs font-bold text-accent">{pinnedTasks.length}</span>
+          </div>
+          <ul className="divide-y divide-border-soft">
+            {pinnedTasks.map((task) => (
+              <li key={task.id} className="flex min-w-0 flex-wrap items-center justify-between gap-3 px-5 py-3.5 sm:px-6">
+                <div className="min-w-0 flex-1">
+                  <Link to={`/tasks?task=${task.id}`} className="block break-words font-semibold text-ink hover:text-accent hover:underline">{task.title}</Link>
+                  <p className="mt-1 text-xs text-muted">{formatDueDate(task)}</p>
+                </div>
+                <TaskBadges status={task.status} dueDate={task.due_date} dueTime={task.due_time} />
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       <section aria-label="Task summary" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
