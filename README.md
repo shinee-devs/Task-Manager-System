@@ -19,7 +19,7 @@ frontend/
   vite.config.js
 backend/
   auth/           Registration, login, logout, and session handlers
-  config/         PDO, CORS, JSON response, and session helpers
+  config/         PDO, CORS, JSON response, and file/DB session helpers
   database.sql    Importable MySQL schema
   endpoints/
     auth/         Auth route dispatcher
@@ -60,6 +60,17 @@ For a fresh database, import `backend/database.sql` through phpMyAdmin. For an e
 Place the project under the Apache document root (`www` in WampServer or `htdocs` in XAMPP), then start Apache and MySQL. The API health route is `http://localhost/Task%20Manager%20System/backend/public/api/health`; Apache's `mod_rewrite` must be enabled for the `.htaccess` routes. Use PHP 7.3 or newer with PDO MySQL and mbstring enabled.
 
 The frontend defaults to this workspace's API URL. If the folder or host differs, set `VITE_API_BASE_URL` in the frontend environment to the full `/backend/public/api` URL. CORS allows the Vite origins `http://localhost:5173` and `http://127.0.0.1:5173`; add any other frontend origin to `backend/config/cors.php`.
+
+## Deploy on Vercel
+
+The root `vercel.json` builds the Vite app from `frontend/`, rewrites SPA routes to `index.html`, and routes `/api/*` to the existing PHP front controller using the community `vercel-php` runtime. This PHP runtime is community-maintained, not an official Vercel runtime.
+
+1. Create a managed MySQL database that accepts connections from Vercel. Import `backend/database.sql` for a new database. For an existing database, apply migrations 001 through 004 in order (skip any migration already applied).
+2. Import this Git repository in Vercel with the repository root as the project root. Keep the build settings from `vercel.json`.
+3. Add these Project Environment Variables for Production and Preview: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD`. Vercel automatically selects database sessions; `SESSION_DRIVER=database` can also be set explicitly. If your database requires a CA certificate, deploy the certificate file and set `DB_SSL_CA` to its path. `VITE_API_BASE_URL=/api` is already the production default; override it only if you use a different API path. Do not put database credentials in `VITE_*` variables or commit them to the repository.
+4. Deploy, then verify `https://<your-project>.vercel.app/api/health` returns `status: ok`; register a test account and confirm a login survives page reload.
+
+Vercel function instances are serverless, so filesystem PHP sessions are not a reliable production store. `SESSION_DRIVER=database` stores them in `php_sessions`; local development keeps the existing file-session default. The Vercel function and frontend share an origin, so browser session cookies do not depend on third-party-cookie behavior. The Vercel runtime needs outbound network access to your MySQL host.
 
 ## Test authentication
 

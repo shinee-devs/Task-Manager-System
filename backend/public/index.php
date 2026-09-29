@@ -4,7 +4,10 @@ declare(strict_types=1);
 require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/response.php';
 
-$requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$vercelApiPath = $_GET['__api_path'] ?? null;
+$requestPath = is_string($vercelApiPath)
+    ? '/api/' . trim($vercelApiPath, '/')
+    : (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/');
 $apiPosition = strpos($requestPath, '/api');
 $apiPath = $apiPosition === false ? '/' : substr($requestPath, $apiPosition);
 $requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';

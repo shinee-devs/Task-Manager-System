@@ -1,5 +1,6 @@
 const apiHost = window.location.hostname || 'localhost'
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || `http://${apiHost}/Task%20Manager%20System/backend/public/api`
+const developmentApiUrl = `http://${apiHost}/Task%20Manager%20System/backend/public/api`
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? developmentApiUrl : '/api')).replace(/\/$/, '')
 
 export async function apiRequest(path, { method = 'GET', body } = {}) {
   let response

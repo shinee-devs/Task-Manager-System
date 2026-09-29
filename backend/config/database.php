@@ -16,11 +16,17 @@ function get_database_connection(): PDO
     $password = getenv('DB_PASSWORD') ?: '';
     $dsn = "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4";
 
-    $connection = new PDO($dsn, $username, $password, [
+    $options = [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
-    ]);
+    ];
+    $sslCa = getenv('DB_SSL_CA');
+    if ($sslCa !== false && $sslCa !== '' && defined('PDO::MYSQL_ATTR_SSL_CA')) {
+        $options[PDO::MYSQL_ATTR_SSL_CA] = $sslCa;
+    }
+
+    $connection = new PDO($dsn, $username, $password, $options);
 
     return $connection;
 }
