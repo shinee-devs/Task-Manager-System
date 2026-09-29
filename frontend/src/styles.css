@@ -57,7 +57,7 @@ select {
 input:not([type='button']):not([type='submit']):not([type='reset']):not([type='checkbox']):not([type='radio']):not([type='range']),
 textarea,
 [contenteditable='true'] {
-  cursor: text;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='24' viewBox='0 0 18 24'%3E%3Cpath d='M4 3h10M9 3v18M4 21h10' stroke='%23ffffff' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M4 3h10M9 3v18M4 21h10' stroke='%23163347' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") 9 12, text;
   caret-color: var(--color-ink);
 }
 
