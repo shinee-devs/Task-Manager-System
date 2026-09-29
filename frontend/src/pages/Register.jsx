@@ -41,36 +41,36 @@ function Register() {
   }
 
   return (
-    <main className="grid min-h-screen place-items-center bg-[#f4f5f2] px-5 py-10">
-      <section className="w-full max-w-[420px] rounded-xl border border-[#e4e8e2] bg-white p-7 sm:p-9">
-        <Link to="/dashboard" className="font-[Manrope] text-lg font-extrabold tracking-[-0.03em] text-[#28623e]">daymark</Link>
+    <main className="motion-enter grid min-h-screen place-items-center bg-page px-5 py-10">
+      <section className="w-full max-w-[420px] rounded-xl border border-border bg-white p-6 shadow-[0_8px_32px_rgba(22,51,71,0.055)] sm:p-9">
+        <Link to="/dashboard" className="font-[Manrope] text-lg font-extrabold tracking-[-0.03em] text-accent">daymark</Link>
         <h1 className="mt-8 text-2xl font-bold tracking-[-0.03em]">Create your account</h1>
-        <p className="mt-2 text-sm text-[#7b847c]">Set up your account to organize your work.</p>
+        <p className="mt-2 text-sm text-muted">Set up your account to organize your work.</p>
         {message && <p role="alert" className="mt-4 rounded-md bg-[#fbeceb] px-3 py-2 text-sm text-red-800">{message}</p>}
         <form className="mt-7 space-y-4" onSubmit={handleSubmit} noValidate>
-          <label className="block text-sm font-semibold text-[#4e574f]">
+          <label htmlFor="register-name" className="field-label">
             Name
-            <input name="name" type="text" autoComplete="name" maxLength={100} value={form.name} onChange={updateField} placeholder="Your name" aria-invalid={Boolean(errors.name)} className="mt-2 w-full rounded-lg border border-[#dfe4de] px-3.5 py-3 font-normal outline-none placeholder:text-[#a3aaa4] focus:border-[#679477]" />
-            {errors.name && <span className="mt-1 block text-xs font-normal text-red-700">{errors.name}</span>}
+            <input id="register-name" name="name" type="text" autoComplete="name" maxLength={100} value={form.name} onChange={updateField} placeholder="Your name" aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? 'register-name-error' : undefined} className="field-control" />
+            {errors.name && <span id="register-name-error" className="field-error">{errors.name}</span>}
           </label>
-          <label className="block text-sm font-semibold text-[#4e574f]">
+          <label htmlFor="register-email" className="field-label">
             Email address
-            <input name="email" type="email" autoComplete="email" maxLength={150} value={form.email} onChange={updateField} placeholder="you@example.com" aria-invalid={Boolean(errors.email)} className="mt-2 w-full rounded-lg border border-[#dfe4de] px-3.5 py-3 font-normal outline-none placeholder:text-[#a3aaa4] focus:border-[#679477]" />
-            {errors.email && <span className="mt-1 block text-xs font-normal text-red-700">{errors.email}</span>}
+            <input id="register-email" name="email" type="email" autoComplete="email" maxLength={150} value={form.email} onChange={updateField} placeholder="you@example.com" aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'register-email-error' : undefined} className="field-control" />
+            {errors.email && <span id="register-email-error" className="field-error">{errors.email}</span>}
           </label>
-          <label className="block text-sm font-semibold text-[#4e574f]">
+          <label htmlFor="register-password" className="field-label">
             Password
-            <input name="password" type="password" autoComplete="new-password" value={form.password} onChange={updateField} placeholder="At least 8 characters" aria-invalid={Boolean(errors.password)} className="mt-2 w-full rounded-lg border border-[#dfe4de] px-3.5 py-3 font-normal outline-none placeholder:text-[#a3aaa4] focus:border-[#679477]" />
-            {errors.password && <span className="mt-1 block text-xs font-normal text-red-700">{errors.password}</span>}
+            <input id="register-password" name="password" type="password" autoComplete="new-password" value={form.password} onChange={updateField} placeholder="At least 8 characters" aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? 'register-password-error' : undefined} className="field-control" />
+            {errors.password && <span id="register-password-error" className="field-error">{errors.password}</span>}
           </label>
-          <label className="block text-sm font-semibold text-[#4e574f]">
+          <label htmlFor="register-confirm-password" className="field-label">
             Confirm password
-            <input name="confirmPassword" type="password" autoComplete="new-password" value={form.confirmPassword} onChange={updateField} placeholder="Re-enter your password" aria-invalid={Boolean(errors.confirmPassword)} className="mt-2 w-full rounded-lg border border-[#dfe4de] px-3.5 py-3 font-normal outline-none placeholder:text-[#a3aaa4] focus:border-[#679477]" />
-            {errors.confirmPassword && <span className="mt-1 block text-xs font-normal text-red-700">{errors.confirmPassword}</span>}
+            <input id="register-confirm-password" name="confirmPassword" type="password" autoComplete="new-password" value={form.confirmPassword} onChange={updateField} placeholder="Re-enter your password" aria-invalid={Boolean(errors.confirmPassword)} aria-describedby={errors.confirmPassword ? 'register-confirm-password-error' : undefined} className="field-control" />
+            {errors.confirmPassword && <span id="register-confirm-password-error" className="field-error">{errors.confirmPassword}</span>}
           </label>
-          <button type="submit" disabled={submitting} className="w-full rounded-lg bg-[#28623e] px-4 py-3 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60">{submitting ? 'Creating account...' : 'Create account'}</button>
+          <button type="submit" disabled={submitting} className="button-base button-primary w-full">{submitting ? 'Creating account...' : 'Create account'}</button>
         </form>
-        <p className="mt-6 text-center text-sm text-[#7b847c]">Already registered? <Link to="/login" className="font-semibold text-[#28623e]">Sign in</Link></p>
+        <p className="mt-6 text-center text-sm text-muted">Already registered? <Link to="/login" className="font-semibold text-accent">Sign in</Link></p>
       </section>
     </main>
   )

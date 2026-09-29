@@ -1,13 +1,32 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
 @import "tailwindcss";
 
+@theme {
+  --color-page: #f7fbff;
+  --color-ink: #163347;
+  --color-muted: #526f82;
+  --color-subtle: #66859a;
+  --color-border: #d2e4ef;
+  --color-border-soft: #e2eef5;
+  --color-accent: #006fc9;
+  --color-accent-hover: #0059a6;
+  --color-accent-soft: #dcedff;
+  --color-accent-pale: #c8e3ff;
+  --color-sky: #086da8;
+  --color-sky-soft: #e0f0fb;
+  --color-cyan: #00778d;
+  --color-cyan-soft: #dff3f7;
+  --color-placeholder: #819bad;
+}
+
 :root {
   font-family: 'DM Sans', sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   font-weight: 400;
-  color: #20251f;
-  background: #f4f5f2;
+  color: var(--color-ink);
+  background: var(--color-page);
+  color-scheme: light;
 }
 
 * {
@@ -15,14 +34,111 @@
 }
 
 body {
-  min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  cursor: default;
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
+}
+
+button,
+a,
+[role='button'],
+summary,
+select {
+  cursor: pointer;
+}
+
+input:not([type='button']):not([type='submit']):not([type='reset']):not([type='checkbox']):not([type='radio']):not([type='range']),
+textarea,
+[contenteditable='true'] {
+  cursor: text;
+  caret-color: var(--color-ink);
+}
+
+input[type='checkbox'],
+input[type='radio'],
+input[type='range'] {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@layer components {
+  .button-base {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition duration-200 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55 motion-reduce:transition-none;
+  }
+
+  .button-primary {
+    @apply bg-accent text-white hover:bg-accent-hover;
+  }
+
+  .button-secondary {
+    @apply border border-border bg-white text-ink hover:bg-page;
+  }
+
+  .button-danger {
+    @apply bg-rose-700 text-white hover:bg-rose-800;
+  }
+
+  .button-ghost {
+    @apply text-accent hover:bg-accent-soft;
+  }
+
+  .field-control {
+    @apply mt-2 min-h-12 w-full rounded-lg border border-border bg-white px-3.5 py-3 text-sm text-ink outline-none transition placeholder:text-placeholder focus:border-accent focus:ring-2 focus:ring-accent/20 aria-[invalid=true]:border-rose-500;
+  }
+
+  .field-label {
+    @apply block text-sm font-semibold text-ink;
+  }
+
+  .field-error {
+    @apply mt-1 block text-sm font-medium text-rose-800;
+  }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes dropdown-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.motion-enter { animation: fade-in-up 180ms ease-out both; }
+.motion-modal { animation: modal-in 180ms ease-out both; }
+.motion-dropdown { animation: dropdown-in 160ms ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 h1,

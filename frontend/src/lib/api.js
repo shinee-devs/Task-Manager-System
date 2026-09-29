@@ -1,4 +1,5 @@
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost/Task%20Manager%20System/backend/public/api'
+const apiHost = window.location.hostname || 'localhost'
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || `http://${apiHost}/Task%20Manager%20System/backend/public/api`
 
 export async function apiRequest(path, { method = 'GET', body } = {}) {
   let response
@@ -10,7 +11,7 @@ export async function apiRequest(path, { method = 'GET', body } = {}) {
       body: body === undefined ? undefined : JSON.stringify(body),
     })
   } catch {
-    throw new Error('Could not reach the PHP API. Check that WampServer is running and the API URL is correct.')
+    throw new Error('Could not reach the PHP API. Check that Apache and MySQL are running and the API URL is correct.')
   }
 
   const result = await response.json().catch(() => null)

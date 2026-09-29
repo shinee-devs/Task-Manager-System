@@ -1,46 +1,149 @@
-const summary = [
-  { label: 'Open tasks', value: '0', tone: 'text-[#27613d]', mark: 'bg-[#dceee0]' },
-  { label: 'Due today', value: '0', tone: 'text-[#a45a32]', mark: 'bg-[#f8e7da]' },
-  { label: 'Completed', value: '0', tone: 'text-[#4f657c]', mark: 'bg-[#e3eaf0]' },
-]
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useAuth } from '../auth/AuthContext.jsx'
+import TaskBadges from '../components/TaskBadges.jsx'
+import { getTasks } from '../lib/tasks.js'
+import { formatTaskDate, getRecentTasks, getTaskStatistics } from '../lib/taskUtils.js'
 
 function Dashboard() {
+  const { user } = useAuth()
+  const [tasks, setTasks] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let active = true
+
+    getTasks()
+      .then((result) => { if (active) setTasks(result) })
+      .catch((requestError) => { if (active) setError(requestError.message) })
+      .finally(() => { if (active) setLoading(false) })
+
+    return () => { active = false }
+  }, [])
+
+  async function reloadTasks() {
+    setLoading(true)
+    try {
+      setTasks(await getTasks())
+      setError('')
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const statistics = getTaskStatistics(tasks)
+  const recentTasks = getRecentTasks(tasks, 5)
+  const completedPercent = statistics.total === 0 ? 0 : Math.round((statistics.completed / statistics.total) * 100)
+  const statusBreakdown = [
+    { label: 'To Do', value: statistics.toDo, color: 'bg-slate-400', legend: 'bg-slate-400' },
+    { label: 'In Progress', value: statistics.inProgress, color: 'bg-blue-600', legend: 'bg-blue-600' },
+    { label: 'Completed', value: statistics.completed, color: 'bg-green-600', legend: 'bg-green-600' },
+  ]
+  const summary = [
+    { label: 'Total Tasks', value: statistics.total, tone: 'text-accent', mark: 'bg-accent-soft' },
+    { label: 'To Do', value: statistics.toDo, tone: 'text-sky', mark: 'bg-sky-soft' },
+    { label: 'In Progress', value: statistics.inProgress, tone: 'text-blue-700', mark: 'bg-blue-100' },
+    { label: 'Completed', value: statistics.completed, tone: 'text-cyan', mark: 'bg-cyan-soft' },
+    { label: 'Overdue', value: statistics.overdue, tone: 'text-rose-700', mark: 'bg-rose-100' },
+  ]
+
   return (
     <div className="mx-auto max-w-[1040px]">
-      <div className="mb-9 flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="mb-2 text-sm font-semibold text-[#728076]">Tuesday, September 29</p>
-          <h1 className="text-[30px] font-bold leading-tight tracking-[-0.04em]">Good morning</h1>
-          <p className="mt-2 text-sm text-[#7b847c]">A little progress goes a long way.</p>
+          <p className="mb-2 text-sm font-semibold text-muted">{new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date())}</p>
+          <h1 className="text-[30px] font-bold leading-tight tracking-[-0.04em]">Good morning, {user?.name?.trim().split(/\s+/)[0] || 'there'}</h1>
+          <p className="mt-2 text-sm text-muted">Here’s what needs your attention today.</p>
         </div>
-        <button type="button" disabled className="cursor-not-allowed rounded-lg bg-[#28623e] px-4 py-2.5 text-sm font-semibold text-white opacity-60">
-          + New task
-        </button>
+        <Link to="/tasks" className="button-base button-primary">View tasks</Link>
       </div>
 
-      <section aria-label="Task summary" className="grid gap-3 sm:grid-cols-3">
+      {error && (
+        <div role="alert" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          <span>{error}</span>
+          <button type="button" onClick={reloadTasks} className="font-semibold underline underline-offset-2">Try again</button>
+        </div>
+      )}
+
+      <section aria-label="Task summary" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {summary.map((item) => (
-          <article key={item.label} className="flex items-center gap-4 rounded-xl border border-[#e6e9e4] bg-white p-5">
+          <article key={item.label} className="flex items-center gap-4 rounded-xl border border-border bg-white p-5">
             <span className={`grid size-10 place-items-center rounded-lg ${item.mark}`}>
               <span className={`size-2.5 rounded-full ${item.tone.replace('text-', 'bg-')}`} />
             </span>
             <div>
-              <p className="text-sm text-[#7b847c]">{item.label}</p>
-              <p className={`mt-0.5 font-[Manrope] text-2xl font-bold ${item.tone}`}>{item.value}</p>
+              <p className="text-sm text-muted">{item.label}</p>
+              <p className={`mt-0.5 font-[Manrope] text-2xl font-bold ${item.tone}`} aria-live="polite">{loading ? '...' : item.value}</p>
             </div>
           </article>
         ))}
       </section>
 
-      <section className="mt-8 rounded-xl border border-[#e6e9e4] bg-white px-6 py-10 text-center sm:py-14">
-        <span className="mx-auto grid size-12 place-items-center rounded-full bg-[#edf4ee] text-[#28623e]">
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="size-6 fill-none stroke-current" strokeWidth="1.6">
-            <path d="M7 4.75h10A2.25 2.25 0 0 1 19.25 7v13.25L12 16l-7.25 4.25V7A2.25 2.25 0 0 1 7 4.75Z" strokeLinejoin="round" />
-            <path d="M9 9h6M9 12h4" strokeLinecap="round" />
-          </svg>
-        </span>
-        <h2 className="mt-4 text-lg font-bold">Your day starts here</h2>
-        <p className="mx-auto mt-1 max-w-sm text-sm leading-6 text-[#7b847c]">Your dashboard is ready. Task creation and activity will arrive in the next phase.</p>
+      <section aria-label="Progress and status breakdown" className="mt-5 grid gap-4 lg:grid-cols-2">
+        <article className="rounded-xl border border-border bg-white p-5 sm:p-6">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-[Manrope] text-base font-bold text-ink">Task progress</h2>
+            <p className="text-sm font-semibold text-muted">{loading ? '...' : `${statistics.completed} of ${statistics.total} tasks completed`}</p>
+          </div>
+          <div role="progressbar" aria-label="Tasks completed" aria-valuemin="0" aria-valuemax={statistics.total} aria-valuenow={statistics.completed} aria-valuetext={`${completedPercent}% complete`} className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-full rounded-full bg-green-600 transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${completedPercent}%` }} />
+          </div>
+          <p className="mt-2 text-xs text-muted">{loading ? 'Loading progress...' : statistics.total === 0 ? 'Add tasks to track your progress.' : `${completedPercent}% complete`}</p>
+        </article>
+
+        <article className="rounded-xl border border-border bg-white p-5 sm:p-6">
+          <div className="flex items-baseline justify-between gap-2">
+            <h2 className="font-[Manrope] text-base font-bold text-ink">Task status</h2>
+            <span className="text-xs text-muted">{loading ? '...' : `${statistics.total} total`}</span>
+          </div>
+          <div role="img" aria-label={`Task status breakdown: ${statusBreakdown.map(({ label, value }) => `${label} ${value}`).join(', ')}`} className="mt-4 flex h-3 overflow-hidden rounded-full bg-slate-100">
+            {!loading && statistics.total > 0 ? statusBreakdown.map(({ label, value, color }) => value > 0 && (
+              <span key={label} className={`${color} transition-[width] duration-300 motion-reduce:transition-none`} style={{ width: `${(value / statistics.total) * 100}%` }} />
+            )) : <span className="h-full w-full bg-slate-100" />}
+          </div>
+          <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
+            {statusBreakdown.map(({ label, value, legend }) => (
+              <li key={label} className="flex items-center gap-2 text-xs text-muted"><span className={`size-2.5 rounded-full ${legend}`} />{label}<span className="font-bold text-ink">{loading ? '...' : value}</span></li>
+            ))}
+          </ul>
+        </article>
+      </section>
+
+      <section aria-labelledby="recent-tasks-title" className="motion-enter mt-6 overflow-hidden rounded-xl border border-border bg-white">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft px-5 py-4 sm:px-6">
+          <div>
+            <h2 id="recent-tasks-title" className="font-[Manrope] text-lg font-bold text-ink">Recent Tasks</h2>
+            <p className="mt-1 text-sm text-muted">The five most recently created tasks.</p>
+          </div>
+          <Link to="/tasks" className="text-sm font-semibold text-accent hover:underline">View all</Link>
+        </div>
+        {loading ? (
+          <p role="status" className="px-5 py-8 text-center text-sm text-muted">Loading recent tasks...</p>
+        ) : recentTasks.length > 0 ? (
+          <ul className="divide-y divide-border-soft">
+            {recentTasks.map((task) => (
+              <li key={task.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-6">
+                <div className="min-w-0">
+                  <h3 className="break-words font-semibold text-ink">{task.title}</h3>
+                  <p className="mt-1 text-xs text-muted">Due {formatTaskDate(task.due_date)}</p>
+                </div>
+                <TaskBadges priority={task.priority} status={task.status} dueDate={task.due_date} />
+              </li>
+            ))}
+          </ul>
+        ) : error ? (
+          <p className="px-5 py-8 text-center text-sm text-muted">Recent tasks are unavailable.</p>
+        ) : (
+          <div className="px-5 py-10 text-center">
+            <span aria-hidden="true" className="mx-auto grid size-10 place-items-center rounded-full bg-accent-soft text-lg font-bold text-accent">+</span>
+            <h3 className="mt-3 font-semibold text-ink">No tasks yet</h3>
+            <p className="mt-1 text-sm text-muted">Create your first task to get started.</p>
+            <Link to="/tasks" className="button-base button-primary mt-4">Add a task</Link>
+          </div>
+        )}
       </section>
     </div>
   )

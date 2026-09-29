@@ -21,4 +21,12 @@ if (preg_match('#^/api/tasks(?:/.*)?$#', $apiPath) === 1) {
     require __DIR__ . '/../endpoints/tasks/index.php';
 }
 
+if (preg_match('#^/api/notifications(?:/.*)?$#', $apiPath) === 1) {
+    require __DIR__ . '/../endpoints/notifications/index.php';
+}
+
+if (preg_match('#^/api/profile(?:/.*)?$#', $apiPath) === 1) {
+    require __DIR__ . '/../endpoints/profile/index.php';
+}
+
 json_response(404, ['error' => 'not_found', 'message' => 'The requested API route was not found.']);
