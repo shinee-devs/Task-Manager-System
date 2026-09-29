@@ -1,3 +1,4 @@
+import useDeadlineClock from '../hooks/useDeadlineClock.js'
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import TaskCard from '../components/TaskCard.jsx'
@@ -6,11 +7,13 @@ import TaskForm from '../components/TaskForm.jsx'
 import { useNotifications } from '../components/NotificationProvider.jsx'
 import { useToast } from '../components/ToastProvider.jsx'
 import { createTask, deleteTask, getTasks, updateTask } from '../lib/tasks.js'
-import { DEFAULT_TASK_FILTERS, filterAndSortTasks } from '../lib/taskUtils.js'
+import { DEFAULT_TASK_FILTERS, filterAndSortTasks, groupTasks } from '../lib/taskUtils.js'
 import useEscapeKey from '../hooks/useEscapeKey.js'
 import useDialogFocus from '../hooks/useDialogFocus.js'
 
 function Tasks() {
+  const [grouped, setGrouped] = useState(false)
+  useDeadlineClock()
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -47,6 +50,18 @@ function Tasks() {
     const matchingTask = tasks.find((task) => Number(task.id) === Number(taskId))
     if (matchingTask) setSelectedTask(matchingTask)
   }, [loading, searchParams, tasks])
+
+  function applyUpdatedTask(task) {
+    setTasks((current) => current.map((item) => Number(item.id) === Number(task.id) ? task : item))
+  }
+
+  async function handlePin(task) {
+    try {
+      const result = await updateTask(task.id, { is_pinned: !task.is_pinned })
+      applyUpdatedTask(result.data.task)
+      showToast(task.is_pinned ? 'Task unpinned.' : 'Task pinned.')
+    } catch (err) { showToast(err.message, 'error') }
+  }
 
   async function refreshTasks() {
     setLoading(true)
@@ -122,17 +137,11 @@ function Tasks() {
     setStatusUpdatingId(task.id)
     setError('')
     try {
-      await updateTask(task.id, {
-        title: task.title,
-        description: task.description || '',
-        priority: task.priority,
-        status: nextStatus,
-        due_date: task.due_date,
-      })
-      await refreshTasks()
+      const result = await updateTask(task.id, { status: nextStatus })
+      applyUpdatedTask(result.data.task)
       await refreshNotifications()
       const message = nextStatus === 'Completed' ? 'Task marked as completed.' : nextStatus === 'In Progress' ? 'Task started.' : 'Task reopened.'
-      setSuccess(message)
+      setSuccess('')
       showToast(message)
       setSelectedTask((current) => current && Number(current.id) === Number(task.id) ? { ...current, status: nextStatus } : current)
     } catch (requestError) {
@@ -203,21 +212,15 @@ function Tasks() {
       )}
 
       {!loading && tasks.length > 0 && (
-        <section aria-label="Search, filters, and sorting" className="mb-5 grid gap-3 rounded-xl border border-border bg-white p-4 sm:grid-cols-2 xl:grid-cols-7">
+        <section aria-label="Search, filters, and sorting" className="mb-5 grid gap-3 rounded-xl border border-border bg-white p-4 sm:grid-cols-2 xl:grid-cols-4">
           <label className="block text-xs font-bold text-muted sm:col-span-2 xl:col-span-2">
-            Search by title
+            Search title or tags
             <input type="search" value={filters.search} onChange={(event) => updateFilter('search', event.target.value)} placeholder="Search tasks..." className="mt-1.5 w-full rounded-lg border border-border px-3 py-2.5 text-sm font-normal text-ink outline-none placeholder:text-placeholder focus:border-accent focus:ring-2 focus:ring-accent/15" />
           </label>
           <label className="block text-xs font-bold text-muted">
             Status
             <select value={filters.status} onChange={(event) => updateFilter('status', event.target.value)} className="mt-1.5 w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm font-normal text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/15">
               <option>All</option><option>To Do</option><option>In Progress</option><option>Completed</option>
-            </select>
-          </label>
-          <label className="block text-xs font-bold text-muted">
-            Priority
-            <select value={filters.priority} onChange={(event) => updateFilter('priority', event.target.value)} className="mt-1.5 w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm font-normal text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/15">
-              <option>All</option><option>Low</option><option>Medium</option><option>High</option>
             </select>
           </label>
           <label className="block text-xs font-bold text-muted">
@@ -229,13 +232,19 @@ function Tasks() {
           <label className="block text-xs font-bold text-muted">
             Sort
             <select value={filters.sort} onChange={(event) => updateFilter('sort', event.target.value)} className="mt-1.5 w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm font-normal text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/15">
-              <option>Newest</option><option>Oldest</option><option>Due Date: Earliest</option><option>Due Date: Latest</option><option>Priority: High to Low</option><option>Priority: Low to High</option>
+              <option>Newest</option><option>Oldest</option><option>Due Date: Earliest</option><option>Due Date: Latest</option>
             </select>
           </label>
+          {[
+            ['category', 'Category', ['All', 'Uncategorized', 'Personal', 'School', 'Work', 'Other']],
+            ['tag', 'Tag', ['All', ...new Set(tasks.flatMap((task) => task.tags || []))]],
+            ['upcoming', 'Upcoming tasks', ['All', 'Today', 'Tomorrow', 'Next 7 Days']],
+          ].map(([key, label, options]) => <label key={key} className="block text-xs font-bold text-muted">{label}<select value={filters[key]} onChange={(event) => updateFilter(key, event.target.value)} className="field-control">{options.map((option) => <option key={option}>{option}</option>)}</select></label>)}
           <button type="button" onClick={resetFilters} disabled={!filtersChanged} className="self-end rounded-lg border border-border px-3 py-2.5 text-sm font-semibold text-accent hover:bg-accent-soft disabled:cursor-not-allowed disabled:text-subtle sm:col-span-2 xl:col-span-1">Reset Filters</button>
         </section>
       )}
 
+      {!loading && tasks.length > 0 && <label className="mb-4 flex items-center gap-2 text-sm text-muted"><input type="checkbox" checked={grouped} onChange={(event) => setGrouped(event.target.checked)} className="size-4 accent-blue-600" />Group by deadline</label>}
       {!loading && tasks.length > 0 && (
         <p className="mb-3 text-sm text-muted" aria-live="polite">Showing <span className="font-semibold text-ink">{visibleTasks.length}</span> of <span className="font-semibold text-ink">{tasks.length}</span> tasks</p>
       )}
@@ -256,9 +265,12 @@ function Tasks() {
           <button type="button" onClick={resetFilters} disabled={!filtersChanged} className="mt-4 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-accent hover:bg-accent-soft disabled:opacity-60">Reset filters</button>
         </section>
       ) : (
-        <section aria-label="Tasks" className="grid gap-4 lg:grid-cols-2">
-          {visibleTasks.map((task) => <TaskCard key={task.id} task={task} onDetails={openDetails} onEdit={openEditForm} onDelete={setDeletingTask} onStatusChange={handleStatusChange} statusUpdating={Number(statusUpdatingId) === Number(task.id)} />)}
-        </section>
+        <div className="space-y-7">
+          {(grouped ? groupTasks(visibleTasks) : [{ label: 'Tasks', tasks: visibleTasks }]).map((group) => <section key={group.label} aria-label={group.label}>
+            {grouped && <h2 className="mb-3 text-sm font-semibold text-muted">{group.label} <span className="ml-1 text-subtle">{group.tasks.length}</span></h2>}
+            <div className="grid items-stretch gap-5 lg:grid-cols-2">{group.tasks.map((task) => <TaskCard key={task.id} task={task} onDetails={openDetails} onEdit={openEditForm} onDelete={setDeletingTask} onPin={handlePin} onStatusChange={handleStatusChange} statusUpdating={Number(statusUpdatingId) === Number(task.id)} />)}</div>
+          </section>)}
+        </div>
       )}
 
       {formOpen && (
@@ -274,6 +286,7 @@ function Tasks() {
       {selectedTask && (
         <TaskDetails
           task={tasks.find((task) => Number(task.id) === Number(selectedTask.id)) || selectedTask}
+          onTaskUpdated={applyUpdatedTask}
           onClose={closeDetails}
           onEdit={editFromDetails}
           onDelete={deleteFromDetails}

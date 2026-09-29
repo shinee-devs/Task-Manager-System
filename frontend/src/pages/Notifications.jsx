@@ -1,3 +1,4 @@
+import useDeadlineClock from '../hooks/useDeadlineClock.js'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import NotificationItem from '../components/NotificationItem.jsx'
@@ -7,6 +8,7 @@ import { useToast } from '../components/ToastProvider.jsx'
 const notificationFilters = ['All', 'Unread', 'Read']
 
 function Notifications() {
+  useDeadlineClock()
   const { notifications, unreadCount, loading, error, refreshNotifications, markRead, markAllRead, removeNotification } = useNotifications()
   const { showToast } = useToast()
   const navigate = useNavigate()

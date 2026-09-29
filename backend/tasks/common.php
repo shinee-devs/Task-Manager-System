@@ -6,6 +6,8 @@ require_once __DIR__ . '/../config/response.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/session.php';
 
+require_once __DIR__ . '/organization.php';
+
 function require_task_user(): int
 {
     start_app_session();
@@ -51,13 +53,11 @@ function normalize_task_fields(array $input, array $defaults = []): array
 {
     $titleInput = array_key_exists('title', $input) ? $input['title'] : ($defaults['title'] ?? '');
     $descriptionInput = array_key_exists('description', $input) ? $input['description'] : ($defaults['description'] ?? '');
-    $priorityInput = array_key_exists('priority', $input) ? $input['priority'] : ($defaults['priority'] ?? 'Medium');
     $statusInput = array_key_exists('status', $input) ? $input['status'] : ($defaults['status'] ?? 'To Do');
     $dueDateInput = array_key_exists('due_date', $input) ? $input['due_date'] : ($defaults['due_date'] ?? null);
 
     $title = is_string($titleInput) ? trim($titleInput) : '';
     $description = is_string($descriptionInput) ? trim($descriptionInput) : '';
-    $priority = is_string($priorityInput) ? $priorityInput : '';
     $status = is_string($statusInput) ? $statusInput : '';
     $dueDate = $dueDateInput === null ? '' : (is_string($dueDateInput) ? trim($dueDateInput) : 'invalid');
     $errors = [];
@@ -67,9 +67,6 @@ function normalize_task_fields(array $input, array $defaults = []): array
     } elseif (mb_strlen($title) > 255) {
         $errors['title'] = 'Title must be 255 characters or fewer.';
     }
-    if (!in_array($priority, ['Low', 'Medium', 'High'], true)) {
-        $errors['priority'] = 'Choose Low, Medium, or High.';
-    }
     if (!in_array($status, ['To Do', 'In Progress', 'Completed'], true)) {
         $errors['status'] = 'Choose To Do, In Progress, or Completed.';
     }
@@ -77,14 +74,24 @@ function normalize_task_fields(array $input, array $defaults = []): array
         $errors['due_date'] = 'Enter a valid due date.';
     }
 
+    $dueTime = $input['due_time'] ?? ($defaults['due_time'] ?? null);
+    if ($dueDate === '') $dueTime = null;
+    elseif (!is_string($dueTime) || !preg_match('/^(?:[01][0-9]|2[0-3]):[0-5][0-9](?::00)?$/', $dueTime)) $errors['due_time'] = 'Choose a valid due time.';
+    else $dueTime = substr($dueTime, 0, 5) . ':00';
+    $pinned = $input['is_pinned'] ?? (bool) ($defaults['is_pinned'] ?? false);
+    if (!is_bool($pinned)) $errors['is_pinned'] = 'Pin must be true or false.';
+
+    [$organization, $organizationErrors] = normalize_organization($input, $defaults, ['due_date' => $dueDate ?: null, 'due_time' => $dueTime]);
+    $errors = array_merge($errors, $organizationErrors);
     return [
-        [
+        array_merge($organization, [
             'title' => $title,
             'description' => $description,
-            'priority' => $priority,
             'status' => $status,
             'due_date' => $dueDate === '' ? null : $dueDate,
-        ],
+            'due_time' => $dueTime,
+            'is_pinned' => (int) $pinned,
+        ]),
         $errors,
     ];
 }

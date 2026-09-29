@@ -1,11 +1,13 @@
+import useDeadlineClock from '../hooks/useDeadlineClock.js'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext.jsx'
 import TaskBadges from '../components/TaskBadges.jsx'
 import { getTasks } from '../lib/tasks.js'
-import { formatTaskDate, getRecentTasks, getTaskStatistics } from '../lib/taskUtils.js'
+import { getUpcomingTasks, formatDueDate, getRecentTasks, getTaskStatistics } from '../lib/taskUtils.js'
 
 function Dashboard() {
+  useDeadlineClock()
   const { user } = useAuth()
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(true)
@@ -112,6 +114,10 @@ function Dashboard() {
         </article>
       </section>
 
+      <section aria-label="Upcoming Deadlines" className="mt-6 rounded-xl border border-border bg-white p-5 sm:p-6">
+        <h2 className="font-[Manrope] text-lg font-bold text-ink">Upcoming Deadlines</h2>
+        {loading ? <p className="mt-3 text-sm text-muted">Loading deadlines...</p> : error ? <p className="mt-3 text-sm text-muted">Deadlines are unavailable.</p> : getUpcomingTasks(tasks).length ? <ul className="mt-3 divide-y divide-border-soft">{getUpcomingTasks(tasks).map((task) => <li key={task.id} className="flex flex-wrap justify-between gap-2 py-3"><Link to={`/tasks?task=${task.id}`} className="min-w-0 break-words font-semibold text-accent hover:underline">{task.title}</Link><span className="text-sm text-muted">{formatDueDate(task)}</span></li>)}</ul> : <p className="mt-3 text-sm text-muted">No upcoming deadlines.</p>}
+      </section>
       <section aria-labelledby="recent-tasks-title" className="motion-enter mt-6 overflow-hidden rounded-xl border border-border bg-white">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft px-5 py-4 sm:px-6">
           <div>
@@ -128,9 +134,9 @@ function Dashboard() {
               <li key={task.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-6">
                 <div className="min-w-0">
                   <h3 className="break-words font-semibold text-ink">{task.title}</h3>
-                  <p className="mt-1 text-xs text-muted">Due {formatTaskDate(task.due_date)}</p>
+                  <p className="mt-1 text-xs text-muted">Due {formatDueDate(task)}</p>
                 </div>
-                <TaskBadges priority={task.priority} status={task.status} dueDate={task.due_date} />
+                <TaskBadges status={task.status} dueDate={task.due_date} dueTime={task.due_time} />
               </li>
             ))}
           </ul>

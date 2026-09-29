@@ -16,3 +16,6 @@ export function updateTask(id, task) {
 export function deleteTask(id) {
   return apiRequest('/tasks/delete', { method: 'DELETE', body: { id } })
 }
+export function updateSubtask(taskId, values) {
+  return apiRequest('/tasks/subtasks', { method: 'POST', body: { task_id: taskId, ...values } })
+}

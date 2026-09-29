@@ -18,8 +18,8 @@ function NotificationItem({ notification, onOpen, onMarkRead, onDelete, compact 
           <span className={isRead ? 'font-medium' : 'font-bold'}>{notification.message}</span>
           {notification.task_title && <span className="mt-1 block truncate text-xs font-medium text-accent">Open: {notification.task_title}</span>}
         </button>
-        {notification.task_title && notification.task_priority && notification.task_status && (
-          <TaskBadges priority={notification.task_priority} status={notification.task_status} dueDate={notification.task_due_date} className="mt-2" />
+        {notification.task_title && notification.task_status && (
+          <TaskBadges status={notification.task_status} dueDate={notification.task_due_date} dueTime={notification.task_due_time} className="mt-2" />
         )}
         <time dateTime={String(notification.created_at).replace(' ', 'T')} className="mt-1 block text-xs text-subtle">{formatNotificationDate(notification.created_at)}</time>
         <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${isRead ? 'bg-slate-100 text-slate-600' : 'bg-accent-soft text-accent'}`}>{isRead ? 'Read' : 'Unread'}</span>

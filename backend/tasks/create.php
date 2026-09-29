@@ -17,26 +17,38 @@ if ($errors !== []) {
 
 try {
     $connection = get_database_connection();
+    $connection->beginTransaction();
     $statement = $connection->prepare(
-        'INSERT INTO tasks (user_id, title, description, priority, status, due_date)
-         VALUES (:user_id, :title, :description, :priority, :status, :due_date)'
+        'INSERT INTO tasks (user_id, title, description, status, due_date, due_time, is_pinned, category, reminder_mode, reminder_date, reminder_time)
+         VALUES (:user_id, :title, :description, :status, :due_date, :due_time, :is_pinned, :category, :reminder_mode, :reminder_date, :reminder_time)'
     );
     $statement->execute([
         'user_id' => $userId,
         'title' => $task['title'],
         'description' => $task['description'],
-        'priority' => $task['priority'],
         'status' => $task['status'],
         'due_date' => $task['due_date'],
+        'due_time' => $task['due_time'],
+        'is_pinned' => $task['is_pinned'],
+        'category' => $task['category'],
+        'reminder_mode' => $task['reminder_mode'],
+        'reminder_date' => $task['reminder_date'],
+        'reminder_time' => $task['reminder_time'],
     ]);
 
+    $taskId = (int) $connection->lastInsertId();
+    save_task_tags($connection, $taskId, $task['tags']);
+    log_task_activity($connection, $taskId, $userId, $task);
+    $connection->commit();
     $statement = $connection->prepare(
-        'SELECT id, title, description, priority, status, due_date, created_at, updated_at
+        'SELECT *
          FROM tasks WHERE id = :id AND user_id = :user_id'
     );
-    $statement->execute(['id' => $connection->lastInsertId(), 'user_id' => $userId]);
+    $statement->execute(['id' => $taskId, 'user_id' => $userId]);
 
-    json_response(201, ['success' => true, 'data' => ['task' => $statement->fetch()]]);
+    json_response(201, ['success' => true, 'data' => ['task' => enrich_tasks($connection, [$statement->fetch()], $userId)[0]]]);
 } catch (PDOException $exception) {
+    if (isset($connection) && $connection->inTransaction()) $connection->rollBack();
+    error_log($exception->getMessage());
     task_server_error('The task could not be created.');
 }

@@ -11,7 +11,7 @@ try {
     $connection = get_database_connection();
     $statement = $connection->prepare(
         'SELECT n.id, n.task_id, n.type, n.message, n.is_read, n.created_at,
-            t.title AS task_title, t.priority AS task_priority,
+            t.title AS task_title, t.due_time AS task_due_time,
             t.status AS task_status, t.due_date AS task_due_date
          FROM notifications n
          LEFT JOIN tasks t ON t.id = n.task_id AND t.user_id = n.user_id
